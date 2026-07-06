@@ -34,7 +34,14 @@ function SignUp() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
+        const authenticatedUser = data.user || data;
+        localStorage.setItem('user', JSON.stringify(authenticatedUser));
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         alert("Signup successful!");
         navigate("/login");
       } else {

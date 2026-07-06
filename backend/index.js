@@ -9,6 +9,7 @@ const app = express();
 const PORT = 8000;
 
 const { User, Complaint, AssignedComplaint, Message } = require("./Schema");
+const { createToken, hashPassword, comparePassword } = require("./auth");
 
 app.use(cors());
 app.use(express.json());
@@ -21,9 +22,20 @@ app.get("/", (req, res) => {
 //----------------- Signup ------------------//
 app.post("/signup", async (req, res) => {
   try {
-    const newUser = new User(req.body);
+    const { name, email, password, userType } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const newUser = new User({ name, email, password: hashedPassword, userType });
     const saved = await newUser.save();
-    res.status(201).json(saved);
+
+    const token = createToken({ id: saved._id, email: saved.email, userType: saved.userType });
+
+    res.status(201).json({ user: saved, token });
   } catch (err) {
     res.status(500).json({ message: "Signup failed", error: err.message });
   }
@@ -35,9 +47,15 @@ app.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "User not found" });
-    if (user.password !== password)
+
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
-    res.status(200).json(user);
+    }
+
+    const token = createToken({ id: user._id, email: user.email, userType: user.userType });
+
+    res.status(200).json({ user, token });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }

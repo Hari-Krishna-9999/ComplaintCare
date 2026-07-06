@@ -35,8 +35,13 @@ function Login() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('user', JSON.stringify(data)); // Store user
-        const userType = data.userType;
+        const authenticatedUser = data.user || data;
+        localStorage.setItem('user', JSON.stringify(authenticatedUser));
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+
+        const userType = authenticatedUser.userType;
 
         if (userType === "Admin") {
           navigate("/admin");
