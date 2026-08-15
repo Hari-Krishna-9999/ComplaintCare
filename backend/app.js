@@ -11,13 +11,27 @@ const errorHandler = require('./src/middleware/errorMiddleware');
 
 const app = express();
 
+const normalizeOrigin = (value) => {
+  if (!value) return null;
+
+  try {
+    return new URL(value).origin;
+  } catch (error) {
+    return value.trim().replace(/\/$/, '');
+  }
+};
+
+const allowedOrigins = new Set(clientUrls.map((url) => normalizeOrigin(url)).filter(Boolean));
+
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) {
       return callback(null, true);
     }
 
-    if (clientUrls.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
       return callback(null, true);
     }
 
