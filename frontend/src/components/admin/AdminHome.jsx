@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
-const API = import.meta.env.VITE_API_URL;
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import API from '../../api/api';
 import FooterC from '../common/FooterC';
 import './AdminHome.css';
 
@@ -31,13 +30,13 @@ const AdminHome = () => {
   const fetchAllData = async () => {
     try {
       const [complaintRes, agentRes, userRes] = await Promise.all([
-        axios.get(`${API}/status`),
-        axios.get(`${API}/agentUsers`),
-        axios.get(`${API}/OrdinaryUsers`),
+        API.get('/complaints'),
+        API.get('/admin/agents'),
+        API.get('/admin/users'),
       ]);
-      setComplaints(complaintRes.data);
-      setAgents(agentRes.data);
-      setUsers(userRes.data);
+      setComplaints(complaintRes.data.data);
+      setAgents(agentRes.data.data);
+      setUsers(userRes.data.data);
     } catch (err) {
       console.error('Error fetching admin data:', err);
     }
@@ -49,7 +48,7 @@ const AdminHome = () => {
     if (!agentId || !agentObj) return alert("Please select an agent");
 
     try {
-      await axios.post(`${API}/assignedComplaints`, {
+      await API.post('/admin/assign', {
         agentId,
         complaintId,
         status: "Assigned",
@@ -65,7 +64,7 @@ const AdminHome = () => {
       fetchAllData();
     } catch (err) {
       console.error('Assignment error:', err);
-      alert("❌ Failed to assign complaint.");
+      alert(err.response?.data?.message || '❌ Failed to assign complaint.');
     }
   };
 

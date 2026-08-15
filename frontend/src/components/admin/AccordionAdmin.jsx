@@ -5,7 +5,7 @@ import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Alert from 'react-bootstrap/Alert';
 import Footer from '../common/FooterC'
-import axios from 'axios';
+import API from '../../api/api';
 import './AdminHome.css';
 const AccordionAdmin = () => {
   const [complaintList, setComplaintList] = useState([]);
@@ -13,8 +13,8 @@ const AccordionAdmin = () => {
   useEffect(() => {
     const getComplaints = async () => {
       try {
-        const response = await axios.get(`${API}status`);
-        const complaints = response.data;
+        const response = await API.get('/complaints');
+        const complaints = response.data.data;
         setComplaintList(complaints);
       } catch (error) {
         console.log(error);
@@ -24,8 +24,8 @@ const AccordionAdmin = () => {
 
     const getAgentsRecords = async () => {
       try {
-        const response = await axios.get(`${API}/AgentUsers`);
-        const agents = response.data;
+        const response = await API.get('/admin/agents');
+        const agents = response.data.data;
         setAgentList(agents);
       } catch (error) {
         console.log(error);
@@ -37,7 +37,6 @@ const AccordionAdmin = () => {
 
   const handleSelection = async (agentId, complaintId, status, agentName) => {
     try {
-      await axios.get(`${API}AgentUsers/${agentId}`);
       const assignedComplaint = {
         agentId,
         complaintId,
@@ -45,10 +44,10 @@ const AccordionAdmin = () => {
         agentName,
       };
 
-      await axios.post(`${API}/assignedComplaints`, assignedComplaint);
-      const updatedComplaintList = complaintList.filter((complaint) => complaint.id !== complaintId);
+      await API.post('/admin/assign', assignedComplaint);
+      const updatedComplaintList = complaintList.filter((complaint) => complaint._id !== complaintId);
       setComplaintList(updatedComplaintList);
-      alert(`Compliant assigned to the Agent ${agentName}`)
+      alert(`Complaint assigned to the Agent ${agentName}`)
     } catch (error) {
       console.log(error);
     }
@@ -74,7 +73,7 @@ const AccordionAdmin = () => {
                         <Card.Text>Comment: {complaint.comment}</Card.Text>
                         <Card.Text>Status: {complaint.status}</Card.Text>
                       </div>
-                      {(complaint.status === "completed") ?
+                      {(complaint.status === 'Resolved') ?
                         <></>
                         : <Dropdown className='mt-2'>
                           <Dropdown.Toggle variant="warning" id="dropdown-basic">

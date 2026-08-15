@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-const API = import.meta.env.VITE_API_URL;
+import API from '../../api/api';
 // Optional: for styling
 
 const ChatWindow = ({ complaintId, onClose }) => {
@@ -12,8 +11,8 @@ const ChatWindow = ({ complaintId, onClose }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await axios.get(`${API}messages/${complaintId}`);
-        setMessages(res.data);
+        const res = await API.get(`/messages/${complaintId}`);
+        setMessages(res.data.data);
       } catch (err) {
         console.error("Error fetching messages:", err);
       }
@@ -34,8 +33,8 @@ const ChatWindow = ({ complaintId, onClose }) => {
 
 
     try {
-      const res = await axios.post(`${API}/messages`, messageData);
-      setMessages((prev) => [...prev, res.data]);
+      const res = await API.post('/messages', messageData);
+      setMessages((prev) => [...prev, res.data.data]);
       setInput('');
     } catch (err) {
       console.error("Error sending message:", err);

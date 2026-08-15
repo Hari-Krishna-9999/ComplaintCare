@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Search, MessageSquare, CheckCircle, Clock, User,
   MapPin, FileText, RotateCcw
 } from 'lucide-react';
-const API = import.meta.env.VITE_API_URL;
 import FooterC from '../common/FooterC';
 import ChatWindow from '../common/ChatWindow';
 import './AgentHome.css';
-import axios from 'axios';
+import API from '../../api/api';
 
 const AgentHome = () => {
-  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const [userName] = useState(user?.name || 'Agent');
   const [agentId] = useState(user?._id);
@@ -22,7 +19,7 @@ const AgentHome = () => {
 
   useEffect(() => {
     if (!user || user.userType !== 'Agent') {
-      navigate('/');
+      window.location.href = '/';
     } else {
       fetchAssignedComplaints();
     }
@@ -30,8 +27,8 @@ const AgentHome = () => {
 
   const fetchAssignedComplaints = async () => {
     try {
-      const res = await axios.get(`${API}/assignedComplaints/${agentId}`);
-      setAgentComplaintList(res.data);
+      const res = await API.get(`/admin/assigned/${agentId}`);
+      setAgentComplaintList(res.data.data);
     } catch (err) {
       console.error('Failed to fetch assigned complaints', err);
     }
@@ -39,7 +36,7 @@ const AgentHome = () => {
 
   const handleStatusChange = async (complaintId, newStatus) => {
     try {
-      await axios.put(`${API}/updateComplaintStatus/${complaintId}`, { status: newStatus });
+      await API.put(`/admin/status/${complaintId}`, { status: newStatus });
       setAgentComplaintList(prev =>
         prev.map(complaint =>
           complaint._id === complaintId
@@ -69,7 +66,7 @@ const AgentHome = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/login', { replace: true });
+    window.location.href = '/login';
   };
 
   return (

@@ -1,10 +1,10 @@
-import React, { useState,useEffect } from 'react';
-import { Plus, LogOut, FileText, Clock, CheckCircle, MessageSquare, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import API from '../../api/api';
+import { Plus, FileText, Clock, CheckCircle, MessageSquare, Search } from 'lucide-react';
 import FooterC from '../common/FooterC';
 import './UserDashboard.css';
-import Status from './Status';
-import { useNavigate } from 'react-router-dom';
-const API = import.meta.env.VITE_API_URL;
+import { useNavigate , useLocation } from 'react-router-dom';
+
 const HomePage = () => {
   const user = JSON.parse(localStorage.getItem('user')) || { name: 'User' };
   const [showForm, setShowForm] = useState(false);
@@ -22,7 +22,7 @@ const HomePage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const handleChange = (e) => {
@@ -40,18 +40,8 @@ const HomePage = () => {
   };
 
   try {
-    const response = await fetch(`${API}/complaints`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(complaintData),
-    });
-
-    if (!response.ok) throw new Error('Network response was not ok');
-
-    const result = await response.json();
-    console.log('Complaint submitted:', result);
+      const response = await API.post('/complaints', complaintData);
+      const result = response.data.data;
     alert('Complaint submitted successfully!');
     
     setShowForm(false);
@@ -71,6 +61,7 @@ const HomePage = () => {
 };
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleStatusClick = () => {
     navigate('/status');
@@ -78,9 +69,8 @@ const HomePage = () => {
     useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const res = await fetch(`${API}/complaints/${user._id}`);
-        const data = await res.json();
-        setUserComplaints(data);
+        const res = await API.get(`/complaints/user/${user._id}`);
+        setUserComplaints(res.data.data);
       } catch (err) {
         console.error('Error loading complaints:', err);
       }

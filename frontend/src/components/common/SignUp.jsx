@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate , Link} from 'react-router-dom';
-const API = import.meta.env.VITE_API_URL;
+import { useNavigate } from 'react-router-dom';
+import API from '../../api/api';
+
 function SignUp() {
   const navigate = useNavigate();
 
@@ -28,28 +29,16 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch(`${API}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const authenticatedUser = data.user || data;
-        localStorage.setItem('user', JSON.stringify(authenticatedUser));
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        alert("Signup successful!");
-        navigate("/login");
+      const response = await API.post('/auth/register', formData);
+      if (response.data.success) {
+        alert('Signup successful!');
+        navigate('/login');
       } else {
-        alert("Signup failed. Please try again.");
+        alert(response.data.message || 'Signup failed. Please try again.');
       }
     } catch (error) {
       console.error(error);
-      alert("An error occurred during signup.");
+      alert(error.response?.data?.message || 'An error occurred during signup.');
     }
   };
 
@@ -59,9 +48,9 @@ function SignUp() {
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/login">Login</Link></li>
-            <li><Link to="/signup" className="active">Signup</Link></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/login">Login</a></li>
+            <li><a href="/signup" className="active">Signup</a></li>
           </ul>
         </nav>
       </header>
@@ -131,7 +120,7 @@ function SignUp() {
             </div>
             <button className="btn-login" type="submit">Sign Up</button>
             <div className="form-footer">
-              <p>Already have an account? <Link to="/login">Login</Link></p>
+              <p>Already have an account? <a href="/login">Login</a></p>
             </div>
           </form>
         </div>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
-const API = import.meta.env.VITE_API_URL;
+import { useNavigate } from 'react-router-dom';
 import FooterC from './FooterC';
+import API from '../../api/api';
+import { saveUser } from '../../utils/auth';
 
 function Login() {
   const navigate = useNavigate();
@@ -10,11 +11,11 @@ function Login() {
     password: '',
   });
 
-  const [loading, setLoading] = useState(false); // Step 4: loading state
+  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleChange = (e) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -26,38 +27,28 @@ function Login() {
     setErrorMsg('');
 
     try {
-      const res = await fetch(`${API}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await API.post('/auth/login', formData);
+      const data = response.data.data;
 
-      const data = await res.json();
+      saveUser(data);
+      const userType = data.userType;
 
-      if (res.ok) {
-        const authenticatedUser = data.user || data;
-        localStorage.setItem('user', JSON.stringify(authenticatedUser));
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-
-        const userType = authenticatedUser.userType;
-
-        if (userType === "Admin") {
-          navigate("/admin");
-        } else if (userType === "Agent") {
-          navigate("/agent");
-        } else if (userType === "Ordinary") {
-          navigate("/user");
-        } else {
-          setErrorMsg("Unknown user role.");
-        }
+      if (userType === 'Admin') {
+        navigate('/admin');
+      } else if (userType === 'Agent') {
+        navigate('/agent');
+      } else if (userType === 'Ordinary') {
+        navigate('/user');
       } else {
-        setErrorMsg(data.message || "Login failed");
+        setErrorMsg('Unknown user role.');
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Error during login. Please try again.");
+      if (err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg('Error during login. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -71,9 +62,9 @@ function Login() {
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/login" className="active">Login</Link></li>
-            <li><Link to="/signup">Signup</Link></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/login" className="active">Login</a></li>
+            <li><a href="/signup">Signup</a></li>
           </ul>
         </nav>
       </header>
@@ -113,8 +104,8 @@ function Login() {
             </button>
 
             <div className="form-footer">
-              <p>Don't have an account?<Link to="/signup">Signup</Link> </p>
-              <a href="#" className="forgot">Forgot Password?</a>
+              <p>Don't have an account? <a href="/signup">Sign up</a></p>
+              <a href="/forgot-password" className="forgot">Forgot Password?</a>
             </div>
           </form>
         </div>

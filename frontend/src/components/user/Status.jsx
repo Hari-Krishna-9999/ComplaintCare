@@ -1,28 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import API from '../../api/api';
 import FooterC from '../common/FooterC';
 import ChatWindow from '../common/ChatWindow';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MoveLeft } from 'lucide-react';
-const API = import.meta.env.VITE_API_URL;
+
 const Status = () => {
   const [complaints, setComplaints] = useState([]);
   const [openChats, setOpenChats] = useState({});
   const user = JSON.parse(localStorage.getItem('user'));
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeChatId, setActiveChatId] = useState(null);
-  const handleOpenChat = (complaintId) => {
-    setActiveChatId(complaintId);
-  };
-  const handleCloseChat = () => {
-    setActiveChatId(null);
-  };
+
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const res = await fetch(`${API}/complaints/${user._id}`);
-        const data = await res.json();
-        setComplaints(data);
+        const res = await API.get(`/complaints/user/${user._id}`);
+        setComplaints(res.data.data);
       } catch (err) {
         console.error('Error fetching complaints:', err);
       }
@@ -35,19 +28,14 @@ const Status = () => {
   const handleHomeClick = () => navigate('/user');
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const handleDelete = async (complaintId) => {
-  try {
-    const response = await fetch(`${API}/complaints/${complaintId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to delete complaint');
-    }
-    setComplaints(prev => prev.filter(c => c._id !== complaintId));
-   }   catch (err) {
+    try {
+      await API.delete(`/complaints/${complaintId}`);
+      setComplaints((prev) => prev.filter((c) => c._id !== complaintId));
+    } catch (err) {
       console.error('Error deleting complaint:', err);
       alert('Failed to delete complaint');
     }
@@ -79,67 +67,63 @@ const Status = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             {complaints.map((c) => (
-              <div
-                key={c._id}
-                style={{
-                  border: '1px solid #FFD700',
-                  borderRadius: '10px',
-                  padding: '15px',
-                  backgroundColor: '#111',
-                  color: '#fff',
-                }}
-              >
-                <p><strong>Name:</strong> {c.name}</p>
-                <p><strong>Address:</strong> {c.address}</p>
-                <p><strong>City:</strong> {c.city}</p>
-                <p><strong>State:</strong> {c.state}</p>
-                <p><strong>Pincode:</strong> {c.pincode}</p>
-                <p><strong>Description:</strong> {c.comment}</p>
-                <p><strong>Status:</strong> <span style={{ color: '#FFD700' }}>{c.status}</span></p>
-
-                <button
-                  onClick={() => toggleChat(c._id)}
+              <React.Fragment key={c._id}>
+                <div
                   style={{
-                    marginTop: '10px',
-                    backgroundColor: '#FFD700',
-                    border: 'none',
-                    padding: '8px 16px',
-                    color: '#000',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    cursor: 'pointer'
+                    border: '1px solid #FFD700',
+                    borderRadius: '10px',
+                    padding: '15px',
+                    backgroundColor: '#111',
+                    color: '#fff',
                   }}
                 >
-                  {openChats[c._id] ? 'Close Chat' : 'Chat with Agent'}
-                </button>
-                <button
+                  <p><strong>Name:</strong> {c.name}</p>
+                  <p><strong>Address:</strong> {c.address}</p>
+                  <p><strong>City:</strong> {c.city}</p>
+                  <p><strong>State:</strong> {c.state}</p>
+                  <p><strong>Pincode:</strong> {c.pincode}</p>
+                  <p><strong>Description:</strong> {c.comment}</p>
+                  <p><strong>Status:</strong> <span style={{ color: '#FFD700' }}>{c.status}</span></p>
 
-                  style={{
-                    marginTop: '10px',
-                    backgroundColor: 'Red',
-                    border: 'none',
-                    padding: '8px 16px',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    float:'right'
-                  }}
-                  onClick={()=>handleDelete()}
-                >
-                Delete
-                </button>
-
+                  <button
+                    onClick={() => toggleChat(c._id)}
+                    style={{
+                      marginTop: '10px',
+                      backgroundColor: '#FFD700',
+                      border: 'none',
+                      padding: '8px 16px',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {openChats[c._id] ? 'Close Chat' : 'Chat with Agent'}
+                  </button>
+                  <button
+                    style={{
+                      marginTop: '10px',
+                      backgroundColor: 'Red',
+                      border: 'none',
+                      padding: '8px 16px',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      float: 'right'
+                    }}
+                    onClick={() => handleDelete(c._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
                 {openChats[c._id] && (
-                  <div style={{ marginTop: '10px' }}>
-                    <ChatWindow
-                        complaintId={c._id}
-                        onClose={() => toggleChat(c._id)}
-                        user={JSON.parse(localStorage.getItem('user'))}
-                   />
-                  </div>
+                  <ChatWindow
+                    complaintId={c._id}
+                    onClose={() => setOpenChats((prev) => ({ ...prev, [c._id]: false }))}
+                  />
                 )}
-              </div>
+              </React.Fragment>
             ))}
           </div>
         )}
