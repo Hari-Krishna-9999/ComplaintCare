@@ -3,36 +3,27 @@
    padding: 0;
    box-sizing: border-box;
 }
-
 .App{
-   max-width: 100%;
    max-width: 100%;
    background-color: #B0BEC5;
 }
-
 ul {
    display: flex;
    list-style: none;
    flex-direction: row;
    justify-content: space-evenly;
-
 }
-
 .navigate p {
    cursor: pointer;
-
 }
-
 .container {
    margin: 10px;
 }
-
 .home-container {
    width: 100vw;
    height: 88vh;
    display: flex;
 }
-
 .left-side,
 .right-side {
    width: 50%;
@@ -41,47 +32,37 @@ ul {
    flex-direction: column;
    justify-content: center;
    align-items: center;
-
 }
-
 .left-side img {
-   width: 120%;
-   height: 70%;
-
+   width: 100%;
+   max-width: 100%;
+   height: auto;
 }
-
 .right-side {
    display: flex;
    align-items: center;
    justify-content: center;
 }
-
 span {
    font-family: Arial, Helvetica, sans-serif;
 }
-
 .f-letter {
    font-size: 3em;
 }
-
 .s-letter {
    font-size: 1.5em;
 }
-
 .t-letter {
    font-size: 1.2em;
 }
-
 .register {
    border-radius: 30px;
    background-color: #00796B;
 }
-
 .container .form {
    height: 100%;
    width: auto;
 }
-
 .data {
    width: auto;
    height: auto;
@@ -90,14 +71,12 @@ span {
    align-items: center;
    border: 1px solid lightgray;
 }
-
 .complaint-box {
    position: relative;
    margin-top: 10px;
    width: 100%;
    height: auto;
 }
-
 .compliant-form {
    position: absolute;
    left: 50%;
@@ -107,59 +86,46 @@ span {
    border-radius: 5px;
    margin-top: 38px;
 }
-
 .nav-item p {
-
    cursor: pointer;
    font-size: 15px;
    margin-top: 2px;
-   /* Change this to the desired color for the active link */
 }
-
 .nav-item p:hover {
    color: red;
 }
-
 .grid-container {
    display: grid;
    grid-template-columns: 4fr 1fr;
    gap: 2rem;
 }
-
 .chat-container {
    display: flex;
    flex-direction: column;
    height: 100%;
 }
-
 .chat-container h1{
    font-size: 22px;
    text-align: center;
    margin-bottom: 20px;
 }
-
-
 .message-window {
    flex: 1;
    overflow-x: auto;
    padding: 10px;
    width: 100%;
    max-height: 200px;
-
 }
-
 .message {
    background-color: #f5f5f5;
    padding: 5px;
    margin-bottom: 10px;
 }
-
 .input-container {
    display: flex;
    align-items: center;
    padding: 10px;
 }
-
 .input-container input[type="text"] {
    width: 20px;
    flex: 1;
@@ -170,7 +136,6 @@ span {
    padding-left: 10px;
    background-color: rgb(250, 247, 247);
 }
-
 .input-container button {
    padding: 5px 10px;
    color: white;
@@ -179,13 +144,22 @@ span {
    cursor: pointer;
    border-radius: 15px;
 }
-
 .accordian, .body{
    min-height: 70vh;
 }
-
 @media screen and (max-width: 480px) {
    .chat-container {
       height: auto;
+   }
+   .home-container {
+      flex-direction: column;
+      height: auto;
+   }
+   .left-side,
+   .right-side {
+      width: 100%;
+   }
+   .grid-container {
+      grid-template-columns: 1fr;
    }
 }

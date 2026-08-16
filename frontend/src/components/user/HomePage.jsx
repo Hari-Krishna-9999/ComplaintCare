@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import API from '../../api/api';
 import { Plus, FileText, Clock, CheckCircle, MessageSquare, Search } from 'lucide-react';
 import FooterC from '../common/FooterC';
 import './UserDashboard.css';
-import { useNavigate , useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getUser, clearUser } from '../../utils/auth';
 
 const HomePage = () => {
-  const user = JSON.parse(localStorage.getItem('user')) || { name: 'User' };
+  const user = useMemo(() => getUser() || { name: 'User' }, []);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [formData, setFormData] = useState({
-    name: user.name,
+    name: user.name || '',
     address: '',
     city: '',
     state: '',
@@ -18,10 +23,10 @@ const HomePage = () => {
     comment: '',
   });
 
-  const [userComplaints, setUserComplaints] = useState([]); // Dummy array for now
+  const [userComplaints, setUserComplaints] = useState([]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    clearUser();
     window.location.href = '/login';
   };
 
@@ -31,34 +36,40 @@ const HomePage = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setSubmitting(true);
+    setSuccessMsg('');
+    setErrorMsg('');
 
-  const complaintData = {
-    ...formData,
-    userId: user._id, 
-    status: 'Pending',
-  };
+    const complaintData = {
+      ...formData,
+      userId: user._id,
+      status: 'Pending',
+    };
 
-  try {
+    try {
       const response = await API.post('/complaints', complaintData);
       const result = response.data.data;
-    alert('Complaint submitted successfully!');
-    
-    setShowForm(false);
-    setFormData({
-      name: user.name,
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
-      comment: '',
-    });
-    setUserComplaints(prev => [...prev, result]);
-  } catch (error) {
-    console.error('Error submitting complaint:', error);
-    alert('Failed to submit complaint. Please try again.');
-  }
-};
+      setSuccessMsg('Complaint submitted successfully!');
+      setShowForm(false);
+      setFormData({
+        name: user.name || '',
+        address: '',
+        city: '',
+        state: '',
+        pincode: '',
+        comment: '',
+      });
+      setUserComplaints((prev) => [result, ...prev]);
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      setErrorMsg(error.response?.data?.message || 'Failed to submit complaint. Please try again.');
+      setTimeout(() => setErrorMsg(''), 5000);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,28 +77,48 @@ const HomePage = () => {
   const handleStatusClick = () => {
     navigate('/status');
   };
-    useEffect(() => {
+
+  useEffect(() => {
     const fetchComplaints = async () => {
       try {
+        setLoading(true);
         const res = await API.get(`/complaints/user/${user._id}`);
         setUserComplaints(res.data.data);
       } catch (err) {
         console.error('Error loading complaints:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
     if (user?._id) fetchComplaints();
-    }, [user]);
-    const handleHomeClick = () => {
-      navigate('/user');
-    };
+    else setLoading(false);
+  }, [user._id]); // Use primitive _id, not the user object, to prevent infinite loop
+
+  const handleHomeClick = () => {
+    navigate('/user');
+  };
+
+
+  const filteredComplaints = useMemo(() => {
+    if (!searchTerm.trim()) return userComplaints;
+    const term = searchTerm.toLowerCase();
+    return userComplaints.filter(
+      (c) =>
+        c._id?.toLowerCase().includes(term) ||
+        c.comment?.toLowerCase().includes(term) ||
+        c.city?.toLowerCase().includes(term) ||
+        c.status?.toLowerCase().includes(term) ||
+        c.name?.toLowerCase().includes(term)
+    );
+  }, [userComplaints, searchTerm]);
 
   return (
     <div className="homepage-container">
       <header className="homepage-header">
         <div className="brand">ComplaintCare</div>
         <span className="welcome-text">Welcome, {user.name}</span>
-        <div className="user-actions">  
+        <div className="user-actions">
           <button
             className={`complaint-status ${location.pathname === '/user' ? 'active' : ''}`}
             onClick={handleHomeClick}
@@ -105,6 +136,9 @@ const HomePage = () => {
             <Plus size={16} /> New Complaint
           </button>
         </div>
+
+        {successMsg && <div className="toast-success">{successMsg}</div>}
+        {errorMsg && <div className="toast-error">{errorMsg}</div>}
 
         <div className="user-stats">
           {[
@@ -134,17 +168,25 @@ const HomePage = () => {
             />
           </div>
         </div>
-        <h1>Your Complaints</h1>
-        <ul className="complaint-list">
-          {userComplaints.map((c) => (
-            <li key={c._id} className="complaint-item">
-              <strong>Complaint ID:</strong> {c._id}<br/>
-              <strong>Status:</strong> {c.status} <br />
-              <strong>Issue:</strong> {c.comment}
-            </li>
-          ))}
-        </ul>
 
+        {loading ? (
+          <p style={{ color: '#ccc', textAlign: 'center' }}>Loading complaints...</p>
+        ) : filteredComplaints.length === 0 ? (
+          <div className="empty-state">
+            <FileText size={40} style={{ color: '#FFD700' }} />
+            <p>{searchTerm ? 'No complaints match your search.' : 'No complaints yet. Click "New Complaint" to get started.'}</p>
+          </div>
+        ) : (
+          <ul className="complaint-list">
+            {filteredComplaints.map((c) => (
+              <li key={c._id} className="complaint-item">
+                <strong>Complaint ID:</strong> {c._id}<br/>
+                <strong>Status:</strong> <span style={{ color: '#FFD700' }}>{c.status}</span> <br />
+                <strong>Issue:</strong> {c.comment}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {showForm && (
           <div className="form-card">
@@ -152,14 +194,14 @@ const HomePage = () => {
             <form className="complaint-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <input type="text" name="name" value={formData.name} readOnly placeholder="Name" />
-                <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} required />
+                <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} required maxLength={500} />
               </div>
               <div className="form-row">
-                <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} required />
-                <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleChange} required />
+                <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} required maxLength={100} />
+                <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleChange} required maxLength={100} />
               </div>
               <div className="form-row">
-                <input type="number" name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleChange} required />
+                <input type="number" name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleChange} required min={100000} max={999999} />
                 <input type="text" name="status" value="Pending" readOnly />
               </div>
               <textarea
@@ -169,13 +211,21 @@ const HomePage = () => {
                 value={formData.comment}
                 onChange={handleChange}
                 required
+                maxLength={2000}
               />
-              <button type="submit">Register</button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" disabled={submitting}>
+                  {submitting ? 'Submitting...' : 'Register'}
+                </button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ backgroundColor: '#555' }}>
+                  Cancel
+                </button>
+              </div>
             </form>
           </div>
         )}
       </main>
-        <FooterC />
+      <FooterC />
     </div>
   );
 };

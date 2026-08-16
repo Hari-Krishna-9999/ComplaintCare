@@ -5,15 +5,46 @@ const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const { clientUrl } = require('../config/env');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN_LENGTH = 8;
+const NAME_MAX_LENGTH = 100;
+const EMAIL_MAX_LENGTH = 254;
+
+const validatePassword = (password) => {
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`;
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null;
+};
+
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password, userType } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password || !userType) {
+    if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
-    const existingUser = await User.findOne({ email });
+    if (name.length > NAME_MAX_LENGTH) {
+      return res.status(400).json({ success: false, message: `Name must be at most ${NAME_MAX_LENGTH} characters` });
+    }
+
+    if (!EMAIL_REGEX.test(email) || email.length > EMAIL_MAX_LENGTH) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'Email already in use' });
     }
@@ -22,10 +53,10 @@ const registerUser = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      userType,
+      userType: 'Ordinary',
     });
 
     res.status(201).json({
@@ -42,6 +73,7 @@ const registerUser = async (req, res, next) => {
     next(error);
   }
 };
+
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -49,16 +81,16 @@ const loginUser = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: 'Email and password are required',
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'User not found'
+        message: 'Invalid credentials',
       });
     }
 
@@ -67,7 +99,7 @@ const loginUser = async (req, res, next) => {
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Password does not match'
+        message: 'Invalid credentials',
       });
     }
 
@@ -81,43 +113,10 @@ const loginUser = async (req, res, next) => {
         token: generateToken(user),
       },
     });
-
   } catch (error) {
     next(error);
   }
 };
-// const loginUser = async (req, res, next) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     if (!email || !password) {
-//       return res.status(400).json({ success: false, message: 'Email and password are required' });
-//     }
-
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(401).json({ success: false, message: 'Invalid credentials' });
-//     }
-
-//     const passwordMatch = await bcrypt.compare(password, user.password);
-//     if (!passwordMatch) {
-//       return res.status(401).json({ success: false, message: 'Invalid credentials' });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       data: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         userType: user.userType,
-//         token: generateToken(user),
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 const forgotPassword = async (req, res, next) => {
   try {
@@ -127,7 +126,7 @@ const forgotPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(200).json({
         success: true,
@@ -180,6 +179,11 @@ const resetPassword = async (req, res, next) => {
 
     if (password !== confirmPassword) {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
     }
 
     const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');

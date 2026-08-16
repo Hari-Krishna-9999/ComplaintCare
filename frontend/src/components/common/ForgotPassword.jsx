@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import API from '../../api/api';
 import FooterC from './FooterC';
 
@@ -34,9 +34,9 @@ function ForgotPassword() {
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/signup">Signup</a></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/login">Login</Link></li>
+            <li><Link to="/signup">Signup</Link></li>
           </ul>
         </nav>
       </header>
@@ -46,8 +46,8 @@ function ForgotPassword() {
           <h2>Forgot Password</h2>
           <p>Enter your email address and we'll send instructions to reset your password.</p>
 
-          {message && <p style={{ color: 'green' }}>{message}</p>}
-          {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+          {message && <p style={{ color: '#00c853' }}>{message}</p>}
+          {errorMsg && <p style={{ color: '#ff4444' }}>{errorMsg}</p>}
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
@@ -67,7 +67,7 @@ function ForgotPassword() {
             </button>
 
             <div className="form-footer">
-              <p>Remembered your password? <a href="/login">Login</a></p>
+              <p>Remembered your password? <Link to="/login">Login</Link></p>
             </div>
           </form>
         </div>

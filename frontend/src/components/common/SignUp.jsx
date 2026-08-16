@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import API from '../../api/api';
+import FooterC from './FooterC';
 
 function SignUp() {
   const navigate = useNavigate();
@@ -10,8 +11,11 @@ function SignUp() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: '',
   });
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -22,23 +26,48 @@ function SignUp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match.");
+    if (formData.password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
       return;
     }
 
+    if (!/[A-Z]/.test(formData.password)) {
+      setErrorMsg('Password must contain at least one uppercase letter.');
+      return;
+    }
+
+    if (!/[0-9]/.test(formData.password)) {
+      setErrorMsg('Password must contain at least one number.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMsg('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await API.post('/auth/register', formData);
+      const response = await API.post('/auth/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
       if (response.data.success) {
-        alert('Signup successful!');
-        navigate('/login');
+        setSuccessMsg('Signup successful! Redirecting to login...');
+        setTimeout(() => navigate('/login'), 2000);
       } else {
-        alert(response.data.message || 'Signup failed. Please try again.');
+        setErrorMsg(response.data.message || 'Signup failed. Please try again.');
       }
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || 'An error occurred during signup.');
+      console.error(error.message);
+      setErrorMsg(error.response?.data?.message || 'An error occurred during signup.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,9 +77,9 @@ function SignUp() {
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/signup" className="active">Signup</a></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/login">Login</Link></li>
+            <li><Link to="/signup" className="active">Signup</Link></li>
           </ul>
         </nav>
       </header>
@@ -59,6 +88,10 @@ function SignUp() {
         <div className="login-card">
           <h2>Create Account</h2>
           <p>Join us to raise and track complaints</p>
+
+          {errorMsg && <p style={{ color: '#ff4444', marginBottom: '10px' }}>{errorMsg}</p>}
+          {successMsg && <p style={{ color: '#00c853', marginBottom: '10px' }}>{successMsg}</p>}
+
           <form className="signup-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Full Name</label>
@@ -69,6 +102,7 @@ function SignUp() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                maxLength={100}
               />
             </div>
             <div className="form-group">
@@ -80,6 +114,7 @@ function SignUp() {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                maxLength={254}
               />
             </div>
             <div className="form-group">
@@ -87,10 +122,11 @@ function SignUp() {
               <input
                 type="password"
                 name="password"
-                placeholder="Create a password"
+                placeholder="Min 8 chars, 1 uppercase, 1 number"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                minLength={8}
               />
             </div>
             <div className="form-group">
@@ -104,31 +140,17 @@ function SignUp() {
                 required
               />
             </div>
-            <div className="form-group">
-              <label>Select Role</label>
-              <select
-                name="userType"
-                value={formData.userType}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Select your role --</option>
-                <option value="Ordinary">User</option>
-                <option value="Agent">Agent</option>
-                <option value="Admin">Admin</option>
-              </select>
-            </div>
-            <button className="btn-login" type="submit">Sign Up</button>
+            <button className="btn-login" type="submit" disabled={loading}>
+              {loading ? 'Signing up...' : 'Sign Up'}
+            </button>
             <div className="form-footer">
-              <p>Already have an account? <a href="/login">Login</a></p>
+              <p>Already have an account? <Link to="/login">Login</Link></p>
             </div>
           </form>
         </div>
       </div>
 
-      <footer>
-        <p>&copy; {new Date().getFullYear()} ComplaintCare. All rights reserved.</p>
-      </footer>
+      <FooterC />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import API from '../../api/api';
 import FooterC from './FooterC';
 
@@ -27,8 +27,20 @@ function ResetPassword() {
     setMessage('');
     setErrorMsg('');
 
-    if (formData.password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
+    if (formData.password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(formData.password)) {
+      setErrorMsg('Password must contain at least one uppercase letter.');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[0-9]/.test(formData.password)) {
+      setErrorMsg('Password must contain at least one number.');
       setLoading(false);
       return;
     }
@@ -63,9 +75,9 @@ function ResetPassword() {
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/signup">Signup</a></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/login">Login</Link></li>
+            <li><Link to="/signup">Signup</Link></li>
           </ul>
         </nav>
       </header>
@@ -75,8 +87,8 @@ function ResetPassword() {
           <h2>Reset Password</h2>
           <p>Enter a new password for your account.</p>
 
-          {message && <p style={{ color: 'green' }}>{message}</p>}
-          {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+          {message && <p style={{ color: '#00c853' }}>{message}</p>}
+          {errorMsg && <p style={{ color: '#ff4444' }}>{errorMsg}</p>}
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
@@ -84,10 +96,11 @@ function ResetPassword() {
               <input
                 type="password"
                 name="password"
-                placeholder="Enter new password"
+                placeholder="Min 8 chars, 1 uppercase, 1 number"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                minLength={8}
               />
             </div>
             <div className="form-group">

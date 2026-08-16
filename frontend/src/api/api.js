@@ -5,7 +5,6 @@ const normalizeBaseURL = (value) => {
 
   let normalized = value.trim().replace(/\/+$/, '');
 
-  // Guard against common deployment mistake where health endpoint is used as API base.
   if (normalized.endsWith('/api/health')) {
     normalized = normalized.replace('/api/health', '/api');
   }

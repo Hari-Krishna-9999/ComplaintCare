@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import FooterC from './FooterC';
 import API from '../../api/api';
 import { saveUser } from '../../utils/auth';
@@ -54,17 +54,15 @@ function Login() {
     }
   };
 
-
-
   return (
     <>
       <header className="header">
         <div className="brand">COMPLAINTCARE</div>
         <nav>
           <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/login" className="active">Login</a></li>
-            <li><a href="/signup">Signup</a></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/login" className="active">Login</Link></li>
+            <li><Link to="/signup">Signup</Link></li>
           </ul>
         </nav>
       </header>
@@ -74,7 +72,7 @@ function Login() {
           <h2>Welcome Back!</h2>
           <p>Please login to continue</p>
 
-          {errorMsg && <p style={{ color: 'red', marginBottom: '10px' }}>{errorMsg}</p>}
+          {errorMsg && <p style={{ color: '#ff4444', marginBottom: '10px' }}>{errorMsg}</p>}
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
@@ -104,8 +102,8 @@ function Login() {
             </button>
 
             <div className="form-footer">
-              <p>Don't have an account? <a href="/signup">Sign up</a></p>
-              <a href="/forgot-password" className="forgot">Forgot Password?</a>
+              <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
+              <Link to="/forgot-password" className="forgot">Forgot Password?</Link>
             </div>
           </form>
         </div>
