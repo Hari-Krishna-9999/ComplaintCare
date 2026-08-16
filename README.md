@@ -252,6 +252,3 @@ Set `VITE_API_URL` in Netlify environment variables to your Render backend URL (
 
 ---
 
-## License
-
-MIT
