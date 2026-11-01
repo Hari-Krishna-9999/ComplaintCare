@@ -32,8 +32,9 @@ const corsOptions = {
     }
 
     const normalizedOrigin = normalizeOrigin(origin);
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
-    if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
+    if (normalizedOrigin && (allowedOrigins.has(normalizedOrigin) || isLocalhost)) {
       return callback(null, true);
     }
 

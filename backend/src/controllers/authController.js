@@ -25,7 +25,7 @@ const validatePassword = (password) => {
 
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, userType } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -56,7 +56,7 @@ const registerUser = async (req, res, next) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
-      userType: 'Ordinary',
+      userType: userType === 'Agent' || userType === 'Admin' ? userType : 'Ordinary',
     });
 
     res.status(201).json({
@@ -78,14 +78,15 @@ const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || (typeof email === 'string' && !email.trim())) {
       return res.status(400).json({
         success: false,
         message: 'Email and password are required',
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const cleanEmail = typeof email === 'string' ? email.toLowerCase().trim() : email;
+    const user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
       return res.status(401).json({

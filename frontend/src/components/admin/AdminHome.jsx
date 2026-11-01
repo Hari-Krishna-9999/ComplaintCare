@@ -13,6 +13,7 @@ const AdminHome = () => {
   const [users, setUsers] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState({});
   const [assignedMap, setAssignedMap] = useState({});
+  const [newAgent, setNewAgent] = useState({ name: '', email: '', password: '' });
 
   useEffect(() => {
     const fetchAdmin = async () => {
@@ -65,6 +66,39 @@ const AdminHome = () => {
     } catch (err) {
       console.error('Assignment error:', err);
       alert(err.response?.data?.message || '❌ Failed to assign complaint.');
+    }
+  };
+
+  const deleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete? This will also delete their associated complaints and messages. This action cannot be undone.")) return;
+    try {
+      await API.delete(`/admin/users/${id}`);
+      const successToast = document.createElement('div');
+      successToast.className = 'toast-success';
+      successToast.innerText = '✅ Deleted successfully';
+      document.querySelector('.admin-content').prepend(successToast);
+      setTimeout(() => successToast.remove(), 3000);
+      fetchAllData();
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert(err.response?.data?.message || '❌ Failed to delete.');
+    }
+  };
+
+  const handleCreateAgent = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post('/admin/agents', newAgent);
+      const successToast = document.createElement('div');
+      successToast.className = 'toast-success';
+      successToast.innerText = '✅ Agent created successfully';
+      document.querySelector('.admin-content').prepend(successToast);
+      setTimeout(() => successToast.remove(), 3000);
+      setNewAgent({ name: '', email: '', password: '' });
+      fetchAllData();
+    } catch (err) {
+      console.error('Create agent error:', err);
+      alert(err.response?.data?.message || '❌ Failed to create agent.');
     }
   };
 
@@ -165,6 +199,13 @@ const AdminHome = () => {
                 <p><strong>Name:</strong> {user.name}</p>
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Type:</strong> {user.userType}</p>
+                <button 
+                  className="logout-btn" 
+                  style={{marginTop: '15px', width: '100%'}} 
+                  onClick={() => deleteUser(user._id)}
+                >
+                  Delete User
+                </button>
               </div>
             )) : (
               <p style={{ color: '#aaa' }}>No users found.</p>
@@ -173,16 +214,58 @@ const AdminHome = () => {
         )}
 
         {activeTab === 'agents' && (
-          <div className="user-stats">
-            {agents.length > 0 ? agents.map((agent) => (
-              <div key={agent._id} className="stat-card">
-                <p><strong>Name:</strong> {agent.name}</p>
-                <p><strong>Email:</strong> {agent.email}</p>
-              </div>
-            )) : (
-              <p style={{ color: '#aaa' }}>No agents found.</p>
-            )}
-          </div>
+          <>
+            <div className="complaint-item" style={{ marginBottom: '30px', maxWidth: '500px' }}>
+              <h3 style={{ color: '#FFD700', marginBottom: '15px', marginTop: 0 }}>Create New Agent</h3>
+              <form onSubmit={handleCreateAgent} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <input
+                  type="text"
+                  placeholder="Agent Name"
+                  required
+                  style={{ padding: '10px', borderRadius: '5px', border: '1px solid #444', backgroundColor: '#222', color: 'white' }}
+                  value={newAgent.name}
+                  onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
+                />
+                <input
+                  type="email"
+                  placeholder="Agent Email"
+                  required
+                  style={{ padding: '10px', borderRadius: '5px', border: '1px solid #444', backgroundColor: '#222', color: 'white' }}
+                  value={newAgent.email}
+                  onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+                />
+                <input
+                  type="password"
+                  placeholder="Password (min 8 chars, 1 uppercase, 1 number)"
+                  required
+                  style={{ padding: '10px', borderRadius: '5px', border: '1px solid #444', backgroundColor: '#222', color: 'white' }}
+                  value={newAgent.password}
+                  onChange={(e) => setNewAgent({ ...newAgent, password: e.target.value })}
+                />
+                <button type="submit" className="new-complaint-btn" style={{ padding: '12px' }}>
+                  Create Agent
+                </button>
+              </form>
+            </div>
+
+            <div className="user-stats">
+              {agents.length > 0 ? agents.map((agent) => (
+                <div key={agent._id} className="stat-card">
+                  <p><strong>Name:</strong> {agent.name}</p>
+                  <p><strong>Email:</strong> {agent.email}</p>
+                  <button 
+                    className="logout-btn" 
+                    style={{marginTop: '15px', width: '100%'}} 
+                    onClick={() => deleteUser(agent._id)}
+                  >
+                    Delete Agent
+                  </button>
+                </div>
+              )) : (
+                <p style={{ color: '#aaa' }}>No agents found.</p>
+              )}
+            </div>
+          </>
         )}
       </div>
 

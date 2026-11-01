@@ -29,22 +29,33 @@ function SignUp() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (formData.password.length < 8) {
+    const form = e.currentTarget;
+    const name = (form.elements?.name?.value || formData.name || '').trim();
+    const email = (form.elements?.email?.value || formData.email || '').trim();
+    const password = form.elements?.password?.value || formData.password || '';
+    const confirmPassword = form.elements?.confirmPassword?.value || formData.confirmPassword || '';
+
+    if (!name || !email || !password || !confirmPassword) {
+      setErrorMsg('All fields are required.');
+      return;
+    }
+
+    if (password.length < 8) {
       setErrorMsg('Password must be at least 8 characters long.');
       return;
     }
 
-    if (!/[A-Z]/.test(formData.password)) {
+    if (!/[A-Z]/.test(password)) {
       setErrorMsg('Password must contain at least one uppercase letter.');
       return;
     }
 
-    if (!/[0-9]/.test(formData.password)) {
+    if (!/[0-9]/.test(password)) {
       setErrorMsg('Password must contain at least one number.');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setErrorMsg('Passwords do not match.');
       return;
     }
@@ -53,9 +64,10 @@ function SignUp() {
 
     try {
       const response = await API.post('/auth/register', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
+        name,
+        email,
+        password,
+        userType: 'Ordinary',
       });
       if (response.data.success) {
         setSuccessMsg('Signup successful! Redirecting to login...');

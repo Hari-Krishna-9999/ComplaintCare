@@ -1,7 +1,77 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const AssignedComplaint = require('../models/AssignedComplaint');
 const Complaint = require('../models/Complaint');
 const Message = require('../models/Message');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN_LENGTH = 8;
+const NAME_MAX_LENGTH = 100;
+const EMAIL_MAX_LENGTH = 254;
+
+const validatePassword = (password) => {
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`;
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null;
+};
+
+const createAgent = async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (name.length > NAME_MAX_LENGTH) {
+      return res.status(400).json({ success: false, message: `Name must be at most ${NAME_MAX_LENGTH} characters` });
+    }
+
+    if (!EMAIL_REGEX.test(email) || email.length > EMAIL_MAX_LENGTH) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: 'Email already in use' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const agent = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      userType: 'Agent',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Agent created successfully',
+      data: {
+        _id: agent._id,
+        name: agent.name,
+        email: agent.email,
+        userType: agent.userType,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getAgents = async (req, res, next) => {
   try {
@@ -153,6 +223,7 @@ const updateComplaintStatus = async (req, res, next) => {
 };
 
 module.exports = {
+  createAgent,
   getAgents,
   getOrdinaryUsers,
   deleteUser,

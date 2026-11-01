@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  createAgent,
   getAgents,
   getOrdinaryUsers,
   deleteUser,
@@ -12,6 +13,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.post('/agents', protect, authorize('Admin'), createAgent);
 router.get('/agents', protect, authorize('Admin'), getAgents);
 router.get('/users', protect, authorize('Admin'), getOrdinaryUsers);
 router.delete('/users/:id', protect, authorize('Admin'), deleteUser);

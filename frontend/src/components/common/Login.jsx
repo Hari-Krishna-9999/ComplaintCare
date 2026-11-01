@@ -23,12 +23,27 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg('');
 
+    const form = e.currentTarget;
+    const email = (form.elements?.email?.value || formData.email || '').trim();
+    const password = form.elements?.password?.value || formData.password || '';
+
+    if (!email || !password) {
+      setErrorMsg('Please enter both email and password.');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await API.post('/auth/login', formData);
-      const data = response.data.data;
+      const response = await API.post('/auth/login', { email, password });
+      const data = response.data.data || response.data.user || response.data;
+
+      if (!data) {
+        setErrorMsg('Invalid response from server.');
+        return;
+      }
 
       saveUser(data);
       const userType = data.userType;
